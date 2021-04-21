@@ -13,8 +13,14 @@
 (require 'package)
 (setq package-enable-at-startup nil)
 
-(setq package-archives '(("gnu"   . "https://elpa.gnu.org/packages/")
-                         ("melpa" . "https://melpa.org/packages/")))
+(setq package-archives
+      '(("gnu"    . "https://elpa.gnu.org/packages/")
+        ("melpa"  . "https://melpa.org/packages/")
+        ("stable" . "https://stable.melpa.org/packages/"))
+      package-archive-priorities
+      '(("gnu"     .  0)
+        ("melpa"   . 10)
+        ("stable") .  5))
 
 (package-initialize)
 
@@ -31,10 +37,10 @@
 ;; AUTOSAVE & BACKUPS
 
 ;; Automatically save files whenever focus is lost.
-(add-hook 'focus-out-hook
-      (lambda ()
-        (interactive)
-        (save-some-buffers t)))
+(add-hook 'after-focus-change-function
+          (lambda ()
+            (interactive)
+            (save-some-buffers t)))
 
 ;; Store backup and autosave files in the temp directory rather than just
 ;; littering them about everywhere.
@@ -55,8 +61,6 @@
   (setq gc-cons-threshold most-positive-fixnum))
 
 (defun restore-garbage-collection ()
-  ;; Defer it so that commands launched immediately after will enjoy the
-  ;; benefits.
   (run-at-time
    1 nil (lambda () (setq gc-cons-threshold GC-CONS-THRESHOLD))))
 
@@ -67,10 +71,7 @@
 ;; ---------------------------------------------------------------------------
 ;; INTERFACE TWEAKS
 
-;; Disable various default modes/features:
-;;  - the menu bar
-;;  - the scroll bar
-;;  - the tool bar
+;; Disable the menu bar, scroll bar, and tool bar.
 (menu-bar-mode     -1)
 (toggle-scroll-bar -1)
 (tool-bar-mode     -1)
@@ -88,6 +89,11 @@
 ;; Don't require full yes/no answers, allow y/n instead.
 (fset 'yes-or-no-p 'y-or-n-p)
 
+;; Scroll line-by-line rather than jumping around haphazardly.
+(setq scroll-conservatively           10000
+      scroll-margin                       0
+      scroll-preserve-screen-position     1)
+
 ;; Don't use double-spaces after periods (because I say so).
 (setq sentence-end-double-space nil)
 
@@ -97,10 +103,9 @@
 
 ;; Enable various global modes/features:
 ;;  - automatically reload files if modified outside of the editor
-;;  - display line numbers (set the initial gutter size to avoid resizing)
+;;  - display line numbers
 ;;  - prettify symbols (eg. lambda -> λ)
 (global-auto-revert-mode)
-(setq display-line-numbers-width-start 4)
 (global-display-line-numbers-mode)
 (global-prettify-symbols-mode)
 
@@ -112,7 +117,7 @@
 ;; visual effects in vterm, so only use it in programming or text modes.
 (require 'hl-line)
 (set-face-attribute 'hl-line    nil
-                    :background "gray11")
+                    :background "gray17")
 (add-hook 'prog-mode-hook #'hl-line-mode)
 (add-hook 'text-mode-hook #'hl-line-mode)
 
@@ -133,10 +138,21 @@
 ;; ---------------------------------------------------------------------------
 ;; KEY BINDINGS
 
+;; Globally un-set "C-z", which suspends Emacs by default (and is super
+;; annoying!)
+(global-unset-key (kbd "C-z"))
+
 ;; Make it easier to move between windows. Windows can be navigated using
 ;; <shift> in combination with the arrow keys.
 (setq windmove-wrap-around t)
 (windmove-default-keybindings)
+
+;; Enable code folding in programming modes, and set some more reasonable
+;; shortcuts.
+(global-set-key (kbd "C-c C-h") (kbd "C-c @ C-h")) ; Hide a block
+(global-set-key (kbd "C-c C-s") (kbd "C-c @ C-s")) ; Show a block
+
+(add-hook 'prog-mode-hook #'hs-minor-mode)
 
 
 ;; ---------------------------------------------------------------------------
@@ -147,36 +163,113 @@
 (use-package doom-themes
   :ensure t
   :config
-  (load-theme 'doom-one t)
-  (doom-themes-visual-bell-config))
+  (setq doom-themes-enable-bold   t
+        doom-themes-enable-italic t)
+  (doom-themes-org-config)
+  (doom-themes-visual-bell-config)
+  (load-theme 'doom-one t))
 
-;; Sexy mode-line. Aims to be easy to read from small to large monitors.
-;; https://github.com/Malabarba/smart-mode-line
-(use-package smart-mode-line
+;; Modeline from doom.
+;; https://github.com/seagle0128/doom-modeline
+(use-package doom-modeline
   :ensure t
-  :config
-  (setq sml/theme 'respectful)
-  (add-hook 'after-init-hook 'sml/setup))
+  :init   (doom-modeline-mode))
 
 
 ;; ---------------------------------------------------------------------------
 ;; PACKAGES
+
+;; Text completion framework. Uses pluggable back-ends and front-ends to
+;; retrieve and display completion candidates.
+;; https://github.com/company-mode/company-mode
+(use-package company
+  :ensure   t
+  :diminish company-mode
+  :config
+  (setq company-idle-delay            0.2
+        company-minimum-prefix-length 3
+        company-echo-delay            0
+        company-show-numbers          t
+        company-transformers          '(company-sort-by-occurrence))
+  (add-hook 'after-init-hook #'global-company-mode))
 
 ;; Useful improvements to default keyboard shortcuts.
 ;; https://github.com/bbatsov/crux
 (use-package crux
   :ensure t
   :bind
-  ("C-k"   . crux-smart-kill-line)
-  ("C-c n" . crux-cleanup-buffer-or-region)
-  ("C-c f" . crux-recentf-find-file)
-  ("C-c d" . crux-duplicate-current-line-or-region)
-  ("C-a"   . crux-move-beginning-of-line))
+  ("C-a"     . crux-move-beginning-of-line)
+  ("C-k"     . crux-smart-kill-line)
+  ("C-c d"   . crux-duplicate-current-line-or-region)
+  ("C-c f"   . crux-recentf-find-file)
+  ("C-c n"   . crux-cleanup-buffer-or-region)
+  ("C-x C-l" . crux-downcase-region)
+  ("C-x C-u" . crux-upcase-region))
+
+;; An extensible emacs startup screen showing you what’s most important.
+;; https://github.com/emacs-dashboard/emacs-dashboard/
+(use-package dashboard
+  :ensure t
+  :config
+  (setq dashboard-items '((projects . 5)
+                          (recents  . 5)
+                          (agenda   . 5)))
+  (setq dashboard-week-agenda t)
+  (dashboard-setup-startup-hook))
 
 ;; Don't display minor modes in the mode line.
 ;; https://github.com/emacsmirror/diminish
 (use-package diminish
   :ensure t)
+
+;; On-the-fly syntax checking.
+;; https://github.com/flycheck/flycheck
+(use-package flycheck
+  :ensure   t
+  :diminish flycheck-mode
+  :config   (add-hook 'after-init-hook #'global-flycheck-mode))
+
+;; Display gutter icons for inserted, modified, and deleted lines.
+;; https://github.com/emacsorphanage/git-gutter
+(use-package git-gutter
+  :ensure t
+  :config
+  (set-face-foreground 'git-gutter:added    "#98BE65")
+  (set-face-foreground 'git-gutter:modified "#E6C07B")
+  (set-face-foreground 'git-gutter:deleted  "#FF6C6B")
+  (add-hook 'prog-mode-hook #'git-gutter-mode)
+  (add-hook 'text-mode-hook #'git-gutter-mode))
+
+;; A framework for incremental completions and narrowing selections.
+;; https://github.com/emacs-helm/helm
+(use-package helm
+  :ensure   t
+  :diminish helm-mode
+  :bind
+  ("M-x"     . helm-M-x)
+  ("C-x C-f" . helm-find-files)
+  ("M-y"     . helm-show-kill-ring)
+  ("C-x b"   . helm-mini)
+  :config
+  (require 'helm-config)
+  (setq helm-split-window-inside-p         t
+        helm-move-to-line-cycle-in-source  t
+        helm-autoresize-max-height         0
+        helm-autoresize-min-height        20)
+  (helm-mode)
+  (helm-autoresize-mode)
+  ; Re-bind <tab> to run persistent action.
+  (define-key helm-map (kbd "<tab>") 'helm-execute-persistent-action)
+  ; Make <tab> work in terminal.
+  (define-key helm-map (kbd "C-i")   'helm-execute-persistent-action)
+  ; List actions using C-z.
+  (define-key helm-map (kbd "C-z")   'helm-select-action))
+
+;; Integrate helm and projectile.
+;; https://github.com/bbatsov/helm-projectile
+(use-package helm-projectile
+  :ensure t
+  :config (helm-projectile-on))
 
 ;; Highlight FIXME, NOTE, and TODO in comments.
 ;; https://github.com/tarsius/hl-todo
@@ -187,25 +280,48 @@
         '(("FIXME" . "#FF6C6B")
           ("NOTE"  . "#E6C07B")
           ("TODO"  . "#C678DD")))
-  (global-hl-todo-mode))
+  (add-hook 'prog-mode-hook #'hl-todo-mode)
+  (add-hook 'text-mode-hook #'hl-todo-mode))
 
 ;; The one and only true git integration.
 ;; https://github.com/magit/magit
 (use-package magit
-  :bind (("C-M-g" . magit-status)))
+  :ensure t)
+
+;; I mean, you have to use org-mode... right?
+;; https://github.com/bzg/org-mode
+(use-package org-mode
+  :ensure org-plus-contrib
+  :mode   (("\\.org$" . org-mode))
+  :init
+  (setq org-todo-keywords
+        '((sequence "TODO" "IN-PROGRESS" "WAITING" "DONE")))
+  (global-set-key "\C-ca" 'org-agenda)
+  (global-set-key "\C-cl" 'org-store-link))
+
+;; A project interaction/management library.
+;; https://github.com/bbatsov/projectile
+(use-package projectile
+  :ensure   t
+  :diminish projectile-mode
+  :init     (projectile-mode)
+  :bind
+  (("C-c p f" . helm-projectile-find-file)
+   ("C-c p p" . helm-projectile-switch-project)
+   ("s-p"     . projectile-command-map)
+   ("C-c p s" . projectile-save-project-buffers)))
 
 ;; Rainbow delimiters!
 ;; https://github.com/Fanael/rainbow-delimiters
 (use-package rainbow-delimiters
   :ensure t
-  :config
-  (add-hook 'prog-mode-hook #'rainbow-delimiters-mode))
+  :config (add-hook 'prog-mode-hook #'rainbow-delimiters-mode))
 
 ;; Insert/delete parens in pairs, highlight pairs, etc. General quality of life
 ;; improvements.
 ;; https://github.com/Fuco1/smartparens
 (use-package smartparens
-  :ensure t
+  :ensure   t
   :diminish smartparens-mode
   :config
   (progn
@@ -216,10 +332,24 @@
 ;; Show keystroke suggestions.
 ;; https://github.com/justbur/emacs-which-key
 (use-package which-key
-  :ensure t
+  :ensure   t
   :diminish which-key-mode
+  :config   (which-key-mode))
+
+
+;; ---------------------------------------------------------------------------
+;; LANGUAGES
+
+;; https://github.com/wwwjfy/emacs-fish
+(use-package fish-mode
+  :ensure t)
+
+;; https://github.com/greghendershott/racket-mode
+(use-package racket-mode
+  :ensure t
   :config
-  (which-key-mode))
+  (require  'racket-xp)
+  (add-hook 'racket-mode-hook #'racket-xp-mode))
 
 
 ;; ---------------------------------------------------------------------------
@@ -244,7 +374,8 @@
  ;; If there is more than one, they won't work right.
  '(custom-safe-themes
    '("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" default))
- '(package-selected-packages '(use-package)))
+ '(package-selected-packages '(racket-mode git-gutter use-package)))
+ '(org-agenda-files '("~/org/agenda.org"))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
