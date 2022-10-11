@@ -16,11 +16,7 @@
 (setq package-archives
       '(("gnu"    . "https://elpa.gnu.org/packages/")
         ("melpa"  . "https://melpa.org/packages/")
-        ("stable" . "https://stable.melpa.org/packages/"))
-      package-archive-priorities
-      '(("gnu"     .  0)
-        ("melpa"   . 10)
-        ("stable") .  5))
+        ("stable" . "https://stable.melpa.org/packages/")))
 
 (package-initialize)
 
@@ -29,38 +25,22 @@
   (package-refresh-contents)
   (package-install 'use-package))
 
-(eval-when-compile
-  (require 'use-package))
-
-
-;; ---------------------------------------------------------------------------
-;; AUTOSAVE & BACKUPS
-
-;; Automatically save files whenever focus is lost.
-(add-hook 'after-focus-change-function
-          (lambda ()
-            (interactive)
-            (save-some-buffers t)))
-
-;; Store backup and autosave files in the temp directory rather than just
-;; littering them about everywhere.
-(setq backup-directory-alist        `((".*" . ,temporary-file-directory))
-      auto-save-file-name-transform `((".*" ,temporary-file-directory t)))
-
 
 ;; ---------------------------------------------------------------------------
 ;; GARBAGE COLLECTION
 
-(defconst GC-CONS-THRESHOLD    50000000) ; 50MB
-(defconst LARGE-FILE-THRESHOLD 50000000) ; 50MB
+(defconst GC-CONS-THRESHOLD    250000000) ; 250MB
+(defconst LARGE-FILE-THRESHOLD  50000000) ; 50MB
 
 (setq gc-cons-threshold            GC-CONS-THRESHOLD
       large-file-warning-threshold LARGE-FILE-THRESHOLD)
 
 (defun defer-garbage-collection ()
+  "Defer garbage collection indefinitely, or rather until we restore it."
   (setq gc-cons-threshold most-positive-fixnum))
 
 (defun restore-garbage-collection ()
+  "Restore garbage collection with the configured threshold."
   (run-at-time
    1 nil (lambda () (setq gc-cons-threshold GC-CONS-THRESHOLD))))
 
@@ -69,61 +49,19 @@
 
 
 ;; ---------------------------------------------------------------------------
-;; INTERFACE TWEAKS
+;; EDITOR/INTERFACE TWEAKS
 
-;; Disable the menu bar, scroll bar, and tool bar.
-(menu-bar-mode     -1)
-(toggle-scroll-bar -1)
-(tool-bar-mode     -1)
+;; Store backup and autosave files in the temp directory rather than just
+;; littering them about everywhere.
+(setq backup-directory-alist `((".*" . ,temporary-file-directory)))
 
-;; Enable various modes/features:
-;;  - display the line number and cursor column position in the mode line
-;;  - display the date and time (using 24h format) in the mode line
-;;  - display the file size in the mode line
-(column-number-mode)
-(setq display-time-string-forms
-      '((propertize (format-time-string "%Y-%m-%d %H:%M"))))
-(display-time-mode)
-(size-indication-mode)
-
-;; Don't require full yes/no answers, allow y/n instead.
-(fset 'yes-or-no-p 'y-or-n-p)
+;; Don't use double-spaces after periods (because I say so).
+(setq sentence-end-double-space nil)
 
 ;; Scroll line-by-line rather than jumping around haphazardly.
 (setq scroll-conservatively           10000
       scroll-margin                       0
       scroll-preserve-screen-position     1)
-
-;; Don't use double-spaces after periods (because I say so).
-(setq sentence-end-double-space nil)
-
-
-;; ---------------------------------------------------------------------------
-;; EDITOR TWEAKS
-
-;; Enable various global modes/features:
-;;  - automatically reload files if modified outside of the editor
-;;  - display line numbers
-;;  - prettify symbols (eg. lambda -> λ)
-(global-auto-revert-mode)
-(global-display-line-numbers-mode)
-(global-prettify-symbols-mode)
-
-;; Display a ruler in the 80th column.
-(setq-default display-fill-column-indicator-column 80)
-(global-display-fill-column-indicator-mode)
-
-;; Highlight the current line. The default settings can cause some strange
-;; visual effects in vterm, so only use it in programming or text modes.
-(require 'hl-line)
-(set-face-attribute 'hl-line    nil
-                    :background "gray17")
-(add-hook 'prog-mode-hook #'hl-line-mode)
-(add-hook 'text-mode-hook #'hl-line-mode)
-
-;; When text is selected and you begin typing, the selected text should be
-;; overwritten.
-(delete-selection-mode)
 
 ;; Whitespace settings:
 ;;  - tabs are 4 space characters (as the gods intended)
@@ -133,6 +71,49 @@
               tab-width        4)
 (setq require-final-newline t)
 (add-hook 'before-save-hook 'whitespace-cleanup)
+
+;; Open new windows to the right, not on the bottom.
+(setq split-height-threshold nil)
+(setq split-width-threshold 0)
+
+;; Don't require full yes/no answers, allow y/n instead.
+(fset 'yes-or-no-p 'y-or-n-p)
+
+;; Change the default font face and crank up that size!
+(set-frame-font "Source Code Pro 16")
+
+;; Enable various global modes/features:
+;;  - automatically reload files if modified outside of the editor
+;;  - display line numbers
+;;  - prettify symbols (eg. lambda -> λ)
+(global-auto-revert-mode)
+(global-display-line-numbers-mode)
+(global-prettify-symbols-mode)
+
+;; Enable various modes/features:
+;;  - display the line number and cursor column position in the mode line
+;;  - overwrite selected text when typing
+;;  - display the date and time (using 24h format) in the mode line
+;;  - display the file size in the mode line
+(column-number-mode)
+(setq display-time-string-forms
+      '((propertize (format-time-string "%F %H:%M %Z"))))
+(delete-selection-mode)
+(display-time-mode)
+(size-indication-mode)
+
+;; Display a ruler in the 80th column.
+(setq-default display-fill-column-indicator-column 80)
+(global-display-fill-column-indicator-mode)
+
+;; Highlight the current line. The default settings can cause some strange
+;; visual effects in vterm, so only use it in programming or text modes.
+(use-package hl-line
+  :custom-face
+  (hl-line ((t (:background "#2F333B"))))
+  :config
+  (add-hook 'prog-mode-hook #'hl-line-mode)
+  (add-hook 'text-mode-hook #'hl-line-mode))
 
 
 ;; ---------------------------------------------------------------------------
@@ -149,10 +130,9 @@
 
 ;; Enable code folding in programming modes, and set some more reasonable
 ;; shortcuts.
+(add-hook 'prog-mode-hook #'hs-minor-mode)
 (global-set-key (kbd "C-c C-h") (kbd "C-c @ C-h")) ; Hide a block
 (global-set-key (kbd "C-c C-s") (kbd "C-c @ C-s")) ; Show a block
-
-(add-hook 'prog-mode-hook #'hs-minor-mode)
 
 
 ;; ---------------------------------------------------------------------------
@@ -165,7 +145,6 @@
   :config
   (setq doom-themes-enable-bold   t
         doom-themes-enable-italic t)
-  (doom-themes-org-config)
   (doom-themes-visual-bell-config)
   (load-theme 'doom-one t))
 
@@ -173,11 +152,16 @@
 ;; https://github.com/seagle0128/doom-modeline
 (use-package doom-modeline
   :ensure t
-  :init   (doom-modeline-mode))
+  :init   (doom-modeline-mode 1))
 
 
 ;; ---------------------------------------------------------------------------
 ;; PACKAGES
+
+;; All of the icons!
+; https://github.com/domtronn/all-the-icons.el
+(use-package all-the-icons
+  :ensure t)
 
 ;; Text completion framework. Uses pluggable back-ends and front-ends to
 ;; retrieve and display completion candidates.
@@ -186,12 +170,21 @@
   :ensure   t
   :diminish company-mode
   :config
-  (setq company-idle-delay            0.2
+  (setq company-idle-delay            0.4
         company-minimum-prefix-length 3
         company-echo-delay            0
         company-show-numbers          t
         company-transformers          '(company-sort-by-occurrence))
-  (add-hook 'after-init-hook #'global-company-mode))
+  (add-hook 'after-init-hook #'global-company-mode)
+  :bind
+  (:map company-active-map
+        ("C-n" . company-select-next)
+        ("C-p" . company-select-previous)
+        ("M-<" . company-select-first)
+        ("M->" . company-select-last))
+  (:map company-mode-map
+    ("<tab>" . tab-indent-or-complete)
+    ("TAB"   . tab-indent-or-complete)))
 
 ;; Useful improvements to default keyboard shortcuts.
 ;; https://github.com/bbatsov/crux
@@ -205,17 +198,6 @@
   ("C-c n"   . crux-cleanup-buffer-or-region)
   ("C-x C-l" . crux-downcase-region)
   ("C-x C-u" . crux-upcase-region))
-
-;; An extensible emacs startup screen showing you what’s most important.
-;; https://github.com/emacs-dashboard/emacs-dashboard/
-(use-package dashboard
-  :ensure t
-  :config
-  (setq dashboard-items '((projects . 5)
-                          (recents  . 5)
-                          (agenda   . 5)))
-  (setq dashboard-week-agenda t)
-  (dashboard-setup-startup-hook))
 
 ;; Don't display minor modes in the mode line.
 ;; https://github.com/emacsmirror/diminish
@@ -234,42 +216,15 @@
 (use-package git-gutter
   :ensure t
   :config
+  (custom-set-variables
+   '(git-gutter:modified-sign " *")
+   '(git-gutter:added-sign    " +")
+   '(git-gutter:deleted-sign  " -"))
   (set-face-foreground 'git-gutter:added    "#98BE65")
   (set-face-foreground 'git-gutter:modified "#E6C07B")
   (set-face-foreground 'git-gutter:deleted  "#FF6C6B")
   (add-hook 'prog-mode-hook #'git-gutter-mode)
   (add-hook 'text-mode-hook #'git-gutter-mode))
-
-;; A framework for incremental completions and narrowing selections.
-;; https://github.com/emacs-helm/helm
-(use-package helm
-  :ensure   t
-  :diminish helm-mode
-  :bind
-  ("M-x"     . helm-M-x)
-  ("C-x C-f" . helm-find-files)
-  ("M-y"     . helm-show-kill-ring)
-  ("C-x b"   . helm-mini)
-  :config
-  (require 'helm-config)
-  (setq helm-split-window-inside-p         t
-        helm-move-to-line-cycle-in-source  t
-        helm-autoresize-max-height         0
-        helm-autoresize-min-height        20)
-  (helm-mode)
-  (helm-autoresize-mode)
-  ; Re-bind <tab> to run persistent action.
-  (define-key helm-map (kbd "<tab>") 'helm-execute-persistent-action)
-  ; Make <tab> work in terminal.
-  (define-key helm-map (kbd "C-i")   'helm-execute-persistent-action)
-  ; List actions using C-z.
-  (define-key helm-map (kbd "C-z")   'helm-select-action))
-
-;; Integrate helm and projectile.
-;; https://github.com/bbatsov/helm-projectile
-(use-package helm-projectile
-  :ensure t
-  :config (helm-projectile-on))
 
 ;; Highlight FIXME, NOTE, and TODO in comments.
 ;; https://github.com/tarsius/hl-todo
@@ -283,39 +238,57 @@
   (add-hook 'prog-mode-hook #'hl-todo-mode)
   (add-hook 'text-mode-hook #'hl-todo-mode))
 
+;; Language server protocol support.
+;; https://github.com/emacs-lsp/lsp-mode
+(use-package lsp-mode
+  :ensure t
+  :commands lsp
+  :custom
+  (lsp-eldoc-render-all t)
+  (lsp-idle-delay       0.6)
+  ;; Enable/disable the hints as preferred:
+  (lsp-rust-analyzer-cargo-watch-command                                "clippy")
+  (lsp-rust-analyzer-display-chaining-hints                             t)
+  (lsp-rust-analyzer-display-closure-return-type-hints                  t)
+  (lsp-rust-analyzer-display-lifetime-elision-hints-enable              "skip_trivial")
+  (lsp-rust-analyzer-display-lifetime-elision-hints-use-parameter-names nil)
+  (lsp-rust-analyzer-display-parameter-hints                            nil)
+  (lsp-rust-analyzer-display-reborrow-hints                             nil)
+  (lsp-rust-analyzer-server-display-inlay-hints                         t)
+  :config
+  ; FIXME: This needs to be assigned to a hook or something, so that it still
+  ;        works while RA is loading...
+  (set-face-attribute 'lsp-rust-analyzer-inlay-face
+                      nil
+                      :foreground "#797E81"
+                      :height     140
+                      :slant      'italic))
+
 ;; The one and only true git integration.
 ;; https://github.com/magit/magit
 (use-package magit
   :ensure t)
-
-;; I mean, you have to use org-mode... right?
-;; https://github.com/bzg/org-mode
-(use-package org-mode
-  :ensure org-plus-contrib
-  :mode   (("\\.org$" . org-mode))
-  :init
-  (setq org-todo-keywords
-        '((sequence "TODO" "IN-PROGRESS" "WAITING" "DONE")))
-  (global-set-key "\C-ca" 'org-agenda)
-  (global-set-key "\C-cl" 'org-store-link))
-
-;; A project interaction/management library.
-;; https://github.com/bbatsov/projectile
-(use-package projectile
-  :ensure   t
-  :diminish projectile-mode
-  :init     (projectile-mode)
-  :bind
-  (("C-c p f" . helm-projectile-find-file)
-   ("C-c p p" . helm-projectile-switch-project)
-   ("s-p"     . projectile-command-map)
-   ("C-c p s" . projectile-save-project-buffers)))
 
 ;; Rainbow delimiters!
 ;; https://github.com/Fanael/rainbow-delimiters
 (use-package rainbow-delimiters
   :ensure t
   :config (add-hook 'prog-mode-hook #'rainbow-delimiters-mode))
+
+;; A better solution for incremental narrowing.
+;; https://github.com/radian-software/selectrum
+(use-package selectrum
+  :ensure t
+  :config
+  (selectrum-mode +1))
+
+;; Sorting and filtering of list candidates.
+;; https://github.com/radian-software/prescient.el
+(use-package selectrum-prescient
+  :ensure t
+  :config
+  (prescient-persist-mode +1)
+  (selectrum-prescient-mode +1))
 
 ;; Insert/delete parens in pairs, highlight pairs, etc. General quality of life
 ;; improvements.
@@ -329,6 +302,45 @@
     (smartparens-global-mode)
     (show-paren-mode)))
 
+;; Save buffers when focus is lost.
+;; https://github.com/bbatsov/super-save
+(use-package super-save
+  :ensure t
+  :config
+  (super-save-mode +1))
+
+;; A powerful and flexible file tree project explorer.
+;; https://github.com/Alexander-Miller/treemacs
+(use-package treemacs
+  :ensure t
+  :defer  t
+  :init
+  (with-eval-after-load 'winum
+    (define-key winum-keymap (kbd "M-0") #'treemacs-select-window))
+  :config
+  (progn
+    (setq treemacs-silent-filewatch t
+          treemacs-silent-refresh   t
+          treemacs-width            40)
+    (treemacs-resize-icons 20))
+  :bind
+  (:map global-map
+        ("M-0"       . treemacs-select-window)
+        ("C-x t 1"   . treemacs-delete-other-windows)
+        ("C-x t t"   . treemacs)
+        ("C-x t d"   . treemacs-select-directory)
+        ("C-x t B"   . treemacs-bookmark)
+        ("C-x t C-t" . treemacs-find-file)
+        ("C-x t M-t" . treemacs-find-tag)))
+
+(use-package treemacs-all-the-icons
+  :after  (treemacs all-the-icons)
+  :ensure t)
+
+(use-package treemacs-magit
+  :after  (treemacs magit)
+  :ensure t)
+
 ;; Show keystroke suggestions.
 ;; https://github.com/justbur/emacs-which-key
 (use-package which-key
@@ -336,20 +348,65 @@
   :diminish which-key-mode
   :config   (which-key-mode))
 
+;; A template system for Emacs.
+;; https://github.com/joaotavora/yasnippet
+(use-package yasnippet
+  :ensure t
+  :config
+  (yas-reload-all)
+  (add-hook 'prog-mode-hook 'yas-minor-mode)
+  (add-hook 'text-mode-hook 'yas-minor-mode))
+
 
 ;; ---------------------------------------------------------------------------
 ;; LANGUAGES
 
-;; https://github.com/wwwjfy/emacs-fish
-(use-package fish-mode
-  :ensure t)
-
-;; https://github.com/greghendershott/racket-mode
-(use-package racket-mode
-  :ensure t
+;; Rust
+;; https://github.com/brotzeit/rustic
+(use-package rustic
+  :ensure
+  :bind (:map rustic-mode-map
+              ("M-j"       . lsp-ui-imenu)
+              ("M-?"       . lsp-find-references)
+              ("C-c C-c l" . flycheck-list-errors)
+              ("C-c C-c a" . lsp-execute-code-action)
+              ("C-c C-c r" . lsp-rename)
+              ("C-c C-c q" . lsp-workspace-restart)
+              ("C-c C-c Q" . lsp-workspace-shutdown)
+              ("C-c C-c s" . lsp-rust-analyzer-status))
   :config
-  (require  'racket-xp)
-  (add-hook 'racket-mode-hook #'racket-xp-mode))
+  (setq rustic-format-on-save t))
+
+
+;; ---------------------------------------------------------------------------
+;; FUNCTIONS
+
+(defun company-yasnippet-or-completion ()
+  (interactive)
+  (or (do-yas-expand)
+      (company-complete-common)))
+
+(defun check-expansion ()
+  (save-excursion
+    (if (looking-at "\\_>") t
+      (backward-char 1)
+      (if (looking-at "\\.") t
+        (backward-char 1)
+        (if (looking-at "::") t nil)))))
+
+(defun do-yas-expand ()
+  (let ((yas/fallback-behavior 'return-nil))
+    (yas/expand)))
+
+(defun tab-indent-or-complete ()
+  (interactive)
+  (if (minibufferp)
+      (minibuffer-complete)
+    (if (or (not yas/minor-mode)
+            (null (do-yas-expand)))
+        (if (check-expansion)
+            (company-complete-common)
+          (indent-for-tab-command)))))
 
 
 ;; ---------------------------------------------------------------------------
@@ -367,18 +424,25 @@
 ;; The expressions below are automatically generated/populated and, in
 ;; general, should not be touched by fleshy human fingers.
 
+(eval-when-compile
+  (require 'use-package))
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(custom-safe-themes
-   '("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" default))
- '(package-selected-packages '(racket-mode git-gutter use-package)))
- '(org-agenda-files '("~/org/agenda.org"))
+ '(git-gutter:added-sign " +")
+ '(git-gutter:deleted-sign " -")
+ '(git-gutter:modified-sign " *")
+ '(inhibit-startup-screen t)
+ '(package-selected-packages
+   '(org-plus-contrib treemacs-all-the-icons treemacs-magit treemacs dashboard selectrum-prescient selectrum all-the-icons rustic lsp-ui helm-lsp helm-projectile super-save git-gutter flycheck which-key magit hl-todo diminish crux smartparens doom-modeline doom-themes use-package)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(hl-line ((t (:background "#2F333B")))))
+
+(provide 'init)
+;;; init.el ends here

@@ -1,6 +1,9 @@
+.cache/
 auto-save-list/
 elpa/
-racket-mode/
 transient/
+var/
+
+.lsp-session*
 projectile-bookmarks.eld
 recentf
