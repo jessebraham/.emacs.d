@@ -51,9 +51,8 @@
 ;; ---------------------------------------------------------------------------
 ;; EDITOR/INTERFACE TWEAKS
 
-;; Store backup and autosave files in the temp directory rather than just
-;; littering them about everywhere.
-(setq backup-directory-alist `((".*" . ,temporary-file-directory)))
+(setq backup-directory-alist        `((".*" . ,temporary-file-directory))
+      auto-save-file-name-transform `((".*" ,temporary-file-directory t)))
 
 ;; Don't use double-spaces after periods (because I say so).
 (setq sentence-end-double-space nil)
@@ -246,15 +245,13 @@
   :custom
   (lsp-eldoc-render-all t)
   (lsp-idle-delay       0.6)
-  ;; Enable/disable the hints as preferred:
-  (lsp-rust-analyzer-cargo-watch-command                                "clippy")
-  (lsp-rust-analyzer-display-chaining-hints                             t)
-  (lsp-rust-analyzer-display-closure-return-type-hints                  t)
-  (lsp-rust-analyzer-display-lifetime-elision-hints-enable              "skip_trivial")
-  (lsp-rust-analyzer-display-lifetime-elision-hints-use-parameter-names nil)
-  (lsp-rust-analyzer-display-parameter-hints                            nil)
-  (lsp-rust-analyzer-display-reborrow-hints                             nil)
-  (lsp-rust-analyzer-server-display-inlay-hints                         t)
+  ;; rust-analyzer configuration
+  ;; https://emacs-lsp.github.io/lsp-mode/page/lsp-rust-analyzer/#available-configurations
+  (lsp-rust-analyzer-cargo-watch-command                   "clippy")
+  (lsp-rust-analyzer-display-chaining-hints                t)
+  (lsp-rust-analyzer-display-closure-return-type-hints     t)
+  (lsp-rust-analyzer-display-lifetime-elision-hints-enable "skip_trivial")
+  (lsp-rust-analyzer-server-display-inlay-hints            t)
   :config
   (add-hook 'lsp-after-open-hook
             (lambda ()
@@ -373,7 +370,7 @@
 ;; Rust
 ;; https://github.com/brotzeit/rustic
 (use-package rustic
-  :ensure
+  :ensure t
   :bind (:map rustic-mode-map
               ("M-j"       . lsp-ui-imenu)
               ("M-?"       . lsp-find-references)
@@ -383,8 +380,11 @@
               ("C-c C-c q" . lsp-workspace-restart)
               ("C-c C-c Q" . lsp-workspace-shutdown)
               ("C-c C-c s" . lsp-rust-analyzer-status))
-  :config
-  (setq rustic-format-on-save t))
+  ;; FIXME: rustic-format-on-save is doing horrific things to my buffers, so
+  ;; it's disabled until I can figure out what the hell is going on...
+  ; :config
+  ; (setq rustic-format-on-save t)
+  )
 
 
 ;; ---------------------------------------------------------------------------
@@ -445,7 +445,7 @@
  '(git-gutter:modified-sign " *")
  '(inhibit-startup-screen t)
  '(package-selected-packages
-   '(racket-mode org-plus-contrib treemacs-all-the-icons treemacs-magit treemacs dashboard selectrum-prescient selectrum all-the-icons rustic lsp-ui helm-lsp helm-projectile super-save git-gutter flycheck which-key magit hl-todo diminish crux smartparens doom-modeline doom-themes use-package)))
+   '(racket-mode treemacs-all-the-icons treemacs-magit treemacs selectrum-prescient selectrum all-the-icons rustic lsp-ui helm-lsp helm-projectile super-save git-gutter flycheck which-key magit hl-todo diminish crux smartparens doom-modeline doom-themes use-package)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
