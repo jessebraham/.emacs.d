@@ -256,13 +256,14 @@
   (lsp-rust-analyzer-display-reborrow-hints                             nil)
   (lsp-rust-analyzer-server-display-inlay-hints                         t)
   :config
-  ; FIXME: This needs to be assigned to a hook or something, so that it still
-  ;        works while RA is loading...
-  (set-face-attribute 'lsp-rust-analyzer-inlay-face
-                      nil
-                      :foreground "#797E81"
-                      :height     140
-                      :slant      'italic))
+  (add-hook 'lsp-after-open-hook
+            (lambda ()
+              (when (lsp-find-workspace 'rust-analyzer nil)
+                (set-face-attribute 'lsp-rust-analyzer-inlay-face
+                                    nil
+                                    :foreground "#797E81"
+                                    :height     140
+                                    :slant      'italic)))))
 
 ;; The one and only true git integration.
 ;; https://github.com/magit/magit
