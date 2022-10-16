@@ -362,6 +362,14 @@
 ;; ---------------------------------------------------------------------------
 ;; LANGUAGES
 
+;; Racket
+;; https://github.com/greghendershott/racket-mode
+(use-package racket-mode
+  :ensure t)
+
+(require 'lsp-racket)
+(add-hook 'racket-mode-hook #'lsp)
+
 ;; Rust
 ;; https://github.com/brotzeit/rustic
 (use-package rustic
@@ -437,7 +445,7 @@
  '(git-gutter:modified-sign " *")
  '(inhibit-startup-screen t)
  '(package-selected-packages
-   '(org-plus-contrib treemacs-all-the-icons treemacs-magit treemacs dashboard selectrum-prescient selectrum all-the-icons rustic lsp-ui helm-lsp helm-projectile super-save git-gutter flycheck which-key magit hl-todo diminish crux smartparens doom-modeline doom-themes use-package)))
+   '(racket-mode org-plus-contrib treemacs-all-the-icons treemacs-magit treemacs dashboard selectrum-prescient selectrum all-the-icons rustic lsp-ui helm-lsp helm-projectile super-save git-gutter flycheck which-key magit hl-todo diminish crux smartparens doom-modeline doom-themes use-package)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

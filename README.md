@@ -12,6 +12,15 @@ $ cd rust-analyzer/
 $ cargo xtask install --server
 ```
 
+You will also need to install [racket-langserver]:
+
+```bash
+$ raco pkg install racket-langserver
+```
+
+[rust-analyzer]: https://github.com/rust-lang/rust-analyzer
+[racket-langserver]: https://github.com/jeapostrophe/racket-langserver
+
 ## Setup
 
 - Clone this repository to `$HOME/.emacs.d/`.
