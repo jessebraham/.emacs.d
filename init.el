@@ -72,8 +72,8 @@
 (add-hook 'before-save-hook 'whitespace-cleanup)
 
 ;; Open new windows to the right, not on the bottom.
-(setq split-height-threshold nil)
-(setq split-width-threshold 0)
+(setq split-height-threshold nil
+      split-width-threshold  0)
 
 ;; Don't require full yes/no answers, allow y/n instead.
 (fset 'yes-or-no-p 'y-or-n-p)
@@ -104,15 +104,6 @@
 ;; Display a ruler in the 80th column.
 (setq-default display-fill-column-indicator-column 80)
 (global-display-fill-column-indicator-mode)
-
-;; Highlight the current line. The default settings can cause some strange
-;; visual effects in vterm, so only use it in programming or text modes.
-(use-package hl-line
-  :custom-face
-  (hl-line ((t (:background "#2F333B"))))
-  :config
-  (add-hook 'prog-mode-hook #'hl-line-mode)
-  (add-hook 'text-mode-hook #'hl-line-mode))
 
 
 ;; ---------------------------------------------------------------------------
@@ -225,6 +216,15 @@
   (add-hook 'prog-mode-hook #'git-gutter-mode)
   (add-hook 'text-mode-hook #'git-gutter-mode))
 
+;; Highlight the current line. The default settings can cause some strange
+;; visual effects in vterm, so only use it in programming or text modes.
+(use-package hl-line
+  :custom-face
+  (hl-line ((t (:background "#2F333B"))))
+  :config
+  (add-hook 'prog-mode-hook #'hl-line-mode)
+  (add-hook 'text-mode-hook #'hl-line-mode))
+
 ;; Highlight FIXME, NOTE, and TODO in comments.
 ;; https://github.com/tarsius/hl-todo
 (use-package hl-todo
@@ -267,6 +267,18 @@
 (use-package magit
   :ensure t)
 
+;; Display the minimap on the right hand side of the buffer.
+;; https://github.com/dengste/minimap
+(use-package minimap
+  :ensure t
+  :config
+  (setq minimap-width-fraction  0.1
+        minimap-minimum-width   20
+        minimap-window-location 'right
+        minimap-update-delay    0.05
+        minimap-recenter-type   'free
+        minimap-hide-fringes    t))
+
 ;; Rainbow delimiters!
 ;; https://github.com/Fanael/rainbow-delimiters
 (use-package rainbow-delimiters
@@ -299,6 +311,13 @@
     (require 'smartparens-config)
     (smartparens-global-mode)
     (show-paren-mode)))
+
+;; Distinguish "real" buffers from "unreal" buffers.
+;; https://github.com/hlissner/emacs-solaire-mode
+(use-package solaire-mode
+  :ensure t
+  :config
+  (solaire-global-mode +1))
 
 ;; Save buffers when focus is lost.
 ;; https://github.com/bbatsov/super-save
@@ -333,7 +352,9 @@
 
 (use-package treemacs-all-the-icons
   :after  (treemacs all-the-icons)
-  :ensure t)
+  :ensure t
+  :config
+  (treemacs-load-theme "all-the-icons"))
 
 (use-package treemacs-magit
   :after  (treemacs magit)
@@ -381,7 +402,7 @@
               ("C-c C-c Q" . lsp-workspace-shutdown)
               ("C-c C-c s" . lsp-rust-analyzer-status))
   ;; FIXME: rustic-format-on-save is doing horrific things to my buffers, so
-  ;; it's disabled until I can figure out what the hell is going on...
+  ;;        it's disabled until I can figure out what the hell is going on...
   ; :config
   ; (setq rustic-format-on-save t)
   )
@@ -445,7 +466,7 @@
  '(git-gutter:modified-sign " *")
  '(inhibit-startup-screen t)
  '(package-selected-packages
-   '(racket-mode treemacs-all-the-icons treemacs-magit treemacs selectrum-prescient selectrum all-the-icons rustic lsp-ui helm-lsp helm-projectile super-save git-gutter flycheck which-key magit hl-todo diminish crux smartparens doom-modeline doom-themes use-package)))
+   '(solaire-mode racket-mode treemacs-all-the-icons treemacs-magit treemacs selectrum-prescient selectrum all-the-icons rustic lsp-ui helm-lsp helm-projectile super-save git-gutter flycheck which-key magit hl-todo diminish crux smartparens doom-modeline doom-themes use-package)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
