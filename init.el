@@ -380,6 +380,11 @@
 ;; ---------------------------------------------------------------------------
 ;; LANGUAGES
 
+;; Fish shell
+;; https://github.com/wwwjfy/emacs-fish
+(use-package fish-mode
+  :ensure t)
+
 ;; Racket
 ;; https://github.com/greghendershott/racket-mode
 (use-package racket-mode
@@ -406,6 +411,11 @@
   ; :config
   ; (setq rustic-format-on-save t)
   )
+
+;; YAML
+;; https://github.com/yoshiki/yaml-mode
+(use-package yaml-mode
+  :ensure t)
 
 
 ;; ---------------------------------------------------------------------------
@@ -466,7 +476,7 @@
  '(git-gutter:modified-sign " *")
  '(inhibit-startup-screen t)
  '(package-selected-packages
-   '(solaire-mode racket-mode treemacs-all-the-icons treemacs-magit treemacs selectrum-prescient selectrum all-the-icons rustic lsp-ui helm-lsp helm-projectile super-save git-gutter flycheck which-key magit hl-todo diminish crux smartparens doom-modeline doom-themes use-package)))
+   '(fish-mode solaire-mode racket-mode treemacs-all-the-icons treemacs-magit treemacs selectrum-prescient selectrum all-the-icons rustic lsp-ui helm-lsp helm-projectile super-save git-gutter flycheck which-key magit hl-todo diminish crux smartparens doom-modeline doom-themes use-package)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
