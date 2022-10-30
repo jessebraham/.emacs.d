@@ -55,7 +55,9 @@
       auto-save-file-name-transform `((".*" ,temporary-file-directory t)))
 
 ;; Don't use double-spaces after periods (because I say so).
-(setq sentence-end-double-space nil)
+;; Also use unicode ellipses, because they're better.
+(setq sentence-end-double-space nil
+      truncate-string-ellipsis  "…")
 
 ;; Scroll line-by-line rather than jumping around haphazardly.
 (setq scroll-conservatively           10000
@@ -105,6 +107,10 @@
 (setq-default display-fill-column-indicator-column 80)
 (global-display-fill-column-indicator-mode)
 
+;; Make sure that UTF-8 is *ALWAYS* the default encoding.
+(set-charset-priority 'unicode)
+(prefer-coding-system 'utf-8-unix)
+
 
 ;; ---------------------------------------------------------------------------
 ;; KEY BINDINGS
@@ -126,7 +132,12 @@
 
 
 ;; ---------------------------------------------------------------------------
-;; THEME
+;; APPEARANCE & THEME
+
+;; All of the icons!
+; https://github.com/domtronn/all-the-icons.el
+(use-package all-the-icons
+  :ensure t)
 
 ;; Use the 'doom-one' theme from the 'doom-themes' package.
 ;; https://github.com/hlissner/emacs-doom-themes/
@@ -144,14 +155,16 @@
   :ensure t
   :init   (doom-modeline-mode 1))
 
+;; Distinguish "real" buffers from "unreal" buffers.
+;; https://github.com/hlissner/emacs-solaire-mode
+(use-package solaire-mode
+  :ensure t
+  :config
+  (solaire-global-mode +1))
+
 
 ;; ---------------------------------------------------------------------------
 ;; PACKAGES
-
-;; All of the icons!
-; https://github.com/domtronn/all-the-icons.el
-(use-package all-the-icons
-  :ensure t)
 
 ;; Text completion framework. Uses pluggable back-ends and front-ends to
 ;; retrieve and display completion candidates.
@@ -199,7 +212,9 @@
 (use-package flycheck
   :ensure   t
   :diminish flycheck-mode
-  :config   (add-hook 'after-init-hook #'global-flycheck-mode))
+  :config
+  (setq flycheck-standard-error-navigation nil)
+  (add-hook 'after-init-hook #'global-flycheck-mode))
 
 ;; Display gutter icons for inserted, modified, and deleted lines.
 ;; https://github.com/emacsorphanage/git-gutter
@@ -236,31 +251,6 @@
           ("TODO"  . "#C678DD")))
   (add-hook 'prog-mode-hook #'hl-todo-mode)
   (add-hook 'text-mode-hook #'hl-todo-mode))
-
-;; Language server protocol support.
-;; https://github.com/emacs-lsp/lsp-mode
-(use-package lsp-mode
-  :ensure t
-  :commands lsp
-  :custom
-  (lsp-eldoc-render-all t)
-  (lsp-idle-delay       0.6)
-  ;; rust-analyzer configuration
-  ;; https://emacs-lsp.github.io/lsp-mode/page/lsp-rust-analyzer/#available-configurations
-  (lsp-rust-analyzer-cargo-watch-command                   "clippy")
-  (lsp-rust-analyzer-display-chaining-hints                t)
-  (lsp-rust-analyzer-display-closure-return-type-hints     t)
-  (lsp-rust-analyzer-display-lifetime-elision-hints-enable "skip_trivial")
-  (lsp-rust-analyzer-server-display-inlay-hints            t)
-  :config
-  (add-hook 'lsp-after-open-hook
-            (lambda ()
-              (when (lsp-find-workspace 'rust-analyzer nil)
-                (set-face-attribute 'lsp-rust-analyzer-inlay-face
-                                    nil
-                                    :foreground "#797E81"
-                                    :height     140
-                                    :slant      'italic)))))
 
 ;; The one and only true git integration.
 ;; https://github.com/magit/magit
@@ -311,13 +301,6 @@
     (require 'smartparens-config)
     (smartparens-global-mode)
     (show-paren-mode)))
-
-;; Distinguish "real" buffers from "unreal" buffers.
-;; https://github.com/hlissner/emacs-solaire-mode
-(use-package solaire-mode
-  :ensure t
-  :config
-  (solaire-global-mode +1))
 
 ;; Save buffers when focus is lost.
 ;; https://github.com/bbatsov/super-save
@@ -378,7 +361,40 @@
 
 
 ;; ---------------------------------------------------------------------------
-;; LANGUAGES
+;; LANGUAGE SERVER PROTOCOL
+
+;; Language server protocol support.
+;; https://github.com/emacs-lsp/lsp-mode
+(use-package lsp-mode
+  :ensure t
+  :commands lsp
+  :custom
+  (lsp-eldoc-render-all t)
+  (lsp-idle-delay       0.6)
+  ;; rust-analyzer configuration
+  ;; https://emacs-lsp.github.io/lsp-mode/page/lsp-rust-analyzer/#available-configurations
+  (lsp-rust-analyzer-cargo-watch-command                   "clippy")
+  (lsp-rust-analyzer-display-chaining-hints                t)
+  (lsp-rust-analyzer-display-closure-return-type-hints     t)
+  (lsp-rust-analyzer-display-lifetime-elision-hints-enable "skip_trivial")
+  (lsp-rust-analyzer-server-display-inlay-hints            t)
+  :config
+  (add-hook 'lsp-after-open-hook
+            (lambda ()
+              (when (lsp-find-workspace 'rust-analyzer nil)
+                (set-face-attribute 'lsp-rust-analyzer-inlay-face
+                                    nil
+                                    :foreground "#797E81"
+                                    :height     140
+                                    :slant      'italic)))))
+
+;; Racket LSP
+(require 'lsp-racket)
+(add-hook 'racket-mode-hook #'lsp)
+
+
+;; ---------------------------------------------------------------------------
+;; LANGUAGE SUPPORT
 
 ;; Fish shell
 ;; https://github.com/wwwjfy/emacs-fish
@@ -389,9 +405,6 @@
 ;; https://github.com/greghendershott/racket-mode
 (use-package racket-mode
   :ensure t)
-
-(require 'lsp-racket)
-(add-hook 'racket-mode-hook #'lsp)
 
 ;; Rust
 ;; https://github.com/brotzeit/rustic
@@ -411,6 +424,11 @@
   ; :config
   ; (setq rustic-format-on-save t)
   )
+
+;; TOML
+;; https://github.com/dryman/toml-mode.el
+(use-package toml-mode
+  :ensure t)
 
 ;; YAML
 ;; https://github.com/yoshiki/yaml-mode
@@ -476,7 +494,7 @@
  '(git-gutter:modified-sign " *")
  '(inhibit-startup-screen t)
  '(package-selected-packages
-   '(fish-mode solaire-mode racket-mode treemacs-all-the-icons treemacs-magit treemacs selectrum-prescient selectrum all-the-icons rustic lsp-ui helm-lsp helm-projectile super-save git-gutter flycheck which-key magit hl-todo diminish crux smartparens doom-modeline doom-themes use-package)))
+   '(toml-mode fish-mode solaire-mode racket-mode treemacs-all-the-icons treemacs-magit treemacs selectrum-prescient selectrum all-the-icons rustic lsp-ui helm-lsp helm-projectile super-save git-gutter flycheck which-key magit hl-todo diminish crux smartparens doom-modeline doom-themes use-package)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
