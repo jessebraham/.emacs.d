@@ -26,6 +26,12 @@
 (load-user-file "key-bindings.el")
 (load-user-file "theme.el")
 
+;; Language Support:
+(load-user-file "lang/fish.el")
+(load-user-file "lang/markdown.el")
+(load-user-file "lang/toml.el")
+(load-user-file "lang/yaml.el")
+
 ;; Start the Emacs server so that new frames don't need to load the config.
 (require 'server)
 (if (not (server-running-p))
