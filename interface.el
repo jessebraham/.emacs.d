@@ -28,7 +28,7 @@
 (fset 'yes-or-no-p 'y-or-n-p)
 
 ;; Change the default font face and crank up that size!
-(set-frame-font "Source Code Pro 16")
+(set-frame-font "Source Code Pro 14")
 
 ;; Enable various global modes/features:
 ;;  - automatically reload files if modified outside of the editor
