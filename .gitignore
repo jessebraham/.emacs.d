@@ -1,5 +1,8 @@
+.cache/
 auto-save-list/
 elpa/
+transient/
 var/
 
 .DS_Store
+.lsp-session-*

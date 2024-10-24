@@ -69,7 +69,8 @@
  '(git-gutter:added-sign " +")
  '(git-gutter:deleted-sign " -")
  '(git-gutter:modified-sign " *")
- '(package-selected-packages '(solaire-mode doom-modeline doom-themes all-the-icons)))
+ '(package-selected-packages
+   '(magit solaire-mode doom-modeline doom-themes all-the-icons)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
